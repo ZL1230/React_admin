@@ -4,15 +4,16 @@ import logo from '../../assets/images/n.jpg'
 import {Link,withRouter} from 'react-router-dom'
 import { Menu, Icon} from 'antd';
 import menuList from '../../config/menuConfig.js'
-import memoryUtils from '../../utils/memoryUtils'
-
+// import memoryUtils from '../../utils/memoryUtils'
+import {setHeadTitle} from '../../redux/actions'
+import {connect} from 'react-redux'
 const SubMenu = Menu.SubMenu;
  class LeftNav extends Component {
    //判断当前登录用户对item是否有权限
   hasAuth=(item)=>{
     const {key,isPublic}=item  //key是权限路径  isPublic是否为公开权限
-     const menus=memoryUtils.user.role.menus  //当前登录人的权限
-    const username=memoryUtils.user.username
+     const menus=this.props.user.role.menus  //当前登录人的权限
+    const username=this.props.user.username
     //1.如果当前用户是admin
     if(username==='admin'||isPublic||menus.indexOf(key)!==-1){
         return true
@@ -63,6 +64,7 @@ const SubMenu = Menu.SubMenu;
     } */
      //根据menu数组生成对应的标签数组   reduce+递归调用
     getMenuNodes=((menuList)=>{
+      // console.log(this.props.headTitle,this.prop)
                //得到当前请求的路由路径  但是left-nav不是路由组件 没有location属性  用withRouter将一般组件拥有路由组件的属性
        const path=this.props.location.pathname
         return menuList.reduce(((pre,item)=>{
@@ -71,8 +73,14 @@ const SubMenu = Menu.SubMenu;
                 //向pre 添加<Menu.Item/>
             //向pre 添加<SubMneu />
             if(!item.children){
+              //判断item是否为当前对应的item
+              if(item.key===path||path.indexOf(item.key)===0){
+                //更新redux中headerTitld的状态
+                this.props.setHeadTitle(item.title)
+              }
               pre.push(( <Menu.Item key={item.key}>
-                  <Link to={item.key}>
+                {/* 利用redux的方法 disptach重而改变redux中state的值 */}
+                  <Link to={item.key} onClick={()=>this.props.setHeadTitle(item.title)}> 
                   <Icon type={item.icon} />
                   <span>{item.title}</span>
                   </Link>
@@ -144,4 +152,7 @@ const SubMenu = Menu.SubMenu;
 //withRouter高阶组件
 //包装非路由组件 产生一个新的路由组件
 //新的组件向非路由组件传递3个属性：history/location/match
-export default withRouter(LeftNav)   //将一般组件拥有路由组件的属性
+export default connect(
+    state=>({user:state.user}),
+    {setHeadTitle}
+)(withRouter(LeftNav))   //将一般组件拥有路由组件的属性

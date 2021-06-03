@@ -2,13 +2,12 @@ import React, { Component } from 'react'
 import './index.less'
 import formateDate from '../../utils/dateUtils'
 import  {reqWeather} from '../../api/index'
-import  memoryUtils from '../../utils/memoryUtils'
 import {withRouter} from 'react-router-dom'
-import menuList from '../../config/menuConfig'
-import storageUtils from '../../utils/storageUtils'
 import LinkButton from '../../components/link-button'
 import { Modal } from 'antd';
- class Header extends Component {
+import {connect} from 'react-redux'
+import {logout} from '../../redux/actions'
+  class Header extends Component {
     state={
         currentTime:formateDate(Date.now()),   //当前时间字符串
         city:'',  //城市
@@ -24,12 +23,9 @@ import { Modal } from 'antd';
             title: '确定退出吗', 
             // content: 'Some descriptions',
             onOk:()=> {
-              //删除本地保存user的数据
-              storageUtils.removeUser()
-              //删除缓存中的数据
-              memoryUtils.user={}
+             this.props.logout()
               //跳转到到login页面
-              this.props.history.replace('/login')
+            //   this.props.history.replace('/login')
             },
         })
     }
@@ -53,27 +49,27 @@ import { Modal } from 'antd';
         this.setState({city,weather,temperature})
     }
 
-    //获取标题
-    getTitle=()=>{
-        //得到当前请求路径
-        const path=this.props.location.pathname
-        let title
-        menuList.forEach((item)=>{
-                if(item.key===path){  //如果当前item的key与path一致，那么就取出当前标题title
-                   title= item.title
-                }else if(item.children){
-                    //在所有的子item中查找
-                const cItem=item.children.find(cItem=>
-                         path.indexOf(cItem.key)===0)
+    // //获取标题
+    // getTitle=()=>{
+    //     //得到当前请求路径
+    //     const path=this.props.location.pathname
+    //     let title
+    //     menuList.forEach((item)=>{
+    //             if(item.key===path){  //如果当前item的key与path一致，那么就取出当前标题title
+    //                title= item.title
+    //             }else if(item.children){
+    //                 //在所有的子item中查找
+    //             const cItem=item.children.find(cItem=>
+    //                      path.indexOf(cItem.key)===0)
                     
-                    //如果有值，则匹配到了
-                    if(cItem){
-                        title=cItem.title
-                    }
-                }
-        })
-        return title
-    }
+    //                 //如果有值，则匹配到了
+    //                 if(cItem){
+    //                     title=cItem.title
+    //                 }
+    //             }
+    //     })
+    //     return title
+    // }
 
    //第一次render之后执行，再次执行异步操作  
     //（1）发ajax请求 （2启动定时器
@@ -86,9 +82,10 @@ import { Modal } from 'antd';
  
     render() {
         const {city,temperature,weather,currentTime}=this.state
-        const {username}=memoryUtils.user
+        const username=this.props.user.username
              //获取当前需要显示的标题
-        const title=this.getTitle()
+        // const title=this.getTitle()
+        const title=this.props.headTitle  //react-redux实现
         // console.log(title)
         return (
             <div className="header">
@@ -112,4 +109,7 @@ import { Modal } from 'antd';
         )
     }
 }
-export default withRouter(Header)
+export default connect(
+    state=>({headTitle:state.headTitle,user:state.user}),
+    {logout}
+)(withRouter(Header))
